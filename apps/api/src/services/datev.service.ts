@@ -1,5 +1,5 @@
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
-import { db } from "../db/client.ts";
+import { getDb } from "../db/client.ts";
 import { customers } from "../db/schemas/customers.ts";
 import { invoices, invoiceLineItems } from "../db/schemas/invoices.ts";
 
@@ -11,7 +11,7 @@ function counterAccount(rate: number) {
 
 export const datevService = {
   async generateExport(orgId: string, from: Date, to: Date) {
-    const invoiceRows = await db
+    const invoiceRows = await getDb()
       .select()
       .from(invoices)
       .where(
@@ -26,9 +26,9 @@ export const datevService = {
     const invoiceIds = invoiceRows.map((row) => row.id);
     const customerIds = [...new Set(invoiceRows.map((row) => row.customerId))];
 
-    const customerRows = customerIds.length ? await db.select().from(customers).where(inArray(customers.id, customerIds)) : [];
+    const customerRows = customerIds.length ? await getDb().select().from(customers).where(inArray(customers.id, customerIds)) : [];
     const lineItemRows = invoiceIds.length
-      ? await db.select().from(invoiceLineItems).where(inArray(invoiceLineItems.invoiceId, invoiceIds))
+      ? await getDb().select().from(invoiceLineItems).where(inArray(invoiceLineItems.invoiceId, invoiceIds))
       : [];
 
     const customerMap = new Map(customerRows.map((row) => [row.id, row]));

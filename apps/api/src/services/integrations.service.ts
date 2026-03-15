@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { and, eq } from "drizzle-orm";
 import { parse } from "csv-parse/sync";
 import axios from "axios";
-import { db } from "../db/client.ts";
+import { getDb } from "../db/client.ts";
 import { encrypt, decrypt } from "../lib/crypto.ts";
 import { createAmazonProvider } from "../integrations/amazon/provider-factory.ts";
 import type { AmazonCredentials } from "../integrations/amazon/types.ts";
@@ -142,7 +142,7 @@ function ensureHttpsAmazonCallbackUri(uri: string) {
 }
 
 async function loadOrgAmazonCredentials(organizationId: string): Promise<AmazonCredentials | undefined> {
-  const [integration] = await db
+  const [integration] = await getDb()
     .select()
     .from(integrations)
     .where(and(eq(integrations.organizationId, organizationId), eq(integrations.type, "AMAZON"), eq(integrations.status, "ACTIVE")))
@@ -174,7 +174,7 @@ async function loadOrgAmazonCredentials(organizationId: string): Promise<AmazonC
 export const integrationsService = {
   async list(organizationId: string) {
     try {
-      return await db.select().from(integrations).where(eq(integrations.organizationId, organizationId));
+      return await getDb().select().from(integrations).where(eq(integrations.organizationId, organizationId));
     } catch {
       return [];
     }
@@ -247,7 +247,7 @@ export const integrationsService = {
       ? and(eq(orgMembers.userId, params.userId), eq(orgMembers.organizationId, params.preferredOrganizationId))
       : eq(orgMembers.userId, params.userId);
 
-    const [membership] = await db.select({ organizationId: orgMembers.organizationId }).from(orgMembers).where(membershipFilter).limit(1);
+    const [membership] = await getDb().select({ organizationId: orgMembers.organizationId }).from(orgMembers).where(membershipFilter).limit(1);
 
     if (!membership?.organizationId) {
       throw new Error("No organization found for this user.");
@@ -322,7 +322,7 @@ export const integrationsService = {
     organizationId: string,
     params: { code: string; sellerId?: string; marketplace: string },
   ): Promise<{ integrationId: string }> {
-    const [existing] = await db
+    const [existing] = await getDb()
       .select()
       .from(integrations)
       .where(and(eq(integrations.organizationId, organizationId), eq(integrations.type, IntegrationType.AMAZON)))
@@ -342,7 +342,7 @@ export const integrationsService = {
     };
 
     if (existing) {
-      await db
+      await getDb()
         .update(integrations)
         .set({
           status: IntegrationStatus.ACTIVE,
@@ -352,7 +352,7 @@ export const integrationsService = {
         })
         .where(eq(integrations.id, existing.id));
     } else {
-      const [created] = await db
+      const [created] = await getDb()
         .insert(integrations)
         .values({
           id: randomUUID(),
@@ -386,7 +386,7 @@ export const integrationsService = {
       ? and(eq(orgMembers.userId, userId), eq(orgMembers.organizationId, preferredOrganizationId))
       : eq(orgMembers.userId, userId);
 
-    const [membership] = await db.select({ organizationId: orgMembers.organizationId }).from(orgMembers).where(membershipFilter).limit(1);
+    const [membership] = await getDb().select({ organizationId: orgMembers.organizationId }).from(orgMembers).where(membershipFilter).limit(1);
 
     if (!membership?.organizationId) {
       throw new Error("No organization found for this user. Complete registration first.");
@@ -431,19 +431,19 @@ export const integrationsService = {
   async importTemu(organizationId: string, csv: string) {
     const rows = parse(csv, { columns: true, skip_empty_lines: true }) as Record<string, string>[];
 
-    const [existing] = await db
+    const [existing] = await getDb()
       .select()
       .from(integrations)
       .where(and(eq(integrations.organizationId, organizationId), eq(integrations.type, IntegrationType.TEMU)))
       .limit(1);
 
     if (existing) {
-      await db
+      await getDb()
         .update(integrations)
         .set({ status: IntegrationStatus.ACTIVE, updatedAt: new Date() })
         .where(eq(integrations.id, existing.id));
     } else {
-      await db.insert(integrations).values({
+      await getDb().insert(integrations).values({
         id: randomUUID(),
         organizationId,
         type: IntegrationType.TEMU,
@@ -456,7 +456,7 @@ export const integrationsService = {
   },
 
   async disconnect(organizationId: string, id: string) {
-    const rows = await db
+    const rows = await getDb()
       .update(integrations)
       .set({ status: IntegrationStatus.DISCONNECTED, updatedAt: new Date() })
       .where(and(eq(integrations.id, id), eq(integrations.organizationId, organizationId)))
@@ -465,7 +465,7 @@ export const integrationsService = {
   },
 
   async triggerSync(organizationId: string, id: string) {
-    const rows = await db
+    const rows = await getDb()
       .update(integrations)
       .set({ status: IntegrationStatus.ACTIVE, lastSyncAt: new Date(), updatedAt: new Date() })
       .where(and(eq(integrations.id, id), eq(integrations.organizationId, organizationId)))
@@ -477,7 +477,7 @@ export const integrationsService = {
   },
 
   async syncStatus(organizationId: string, id: string) {
-    const [row] = await db
+    const [row] = await getDb()
       .select({ id: integrations.id, status: integrations.status, lastSyncAt: integrations.lastSyncAt })
       .from(integrations)
       .where(and(eq(integrations.id, id), eq(integrations.organizationId, organizationId)))

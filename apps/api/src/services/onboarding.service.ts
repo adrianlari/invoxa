@@ -1,13 +1,13 @@
 import { randomUUID } from "crypto";
 import { eq, sql } from "drizzle-orm";
-import { db } from "../db/client.ts";
+import { getDb } from "../db/client.ts";
 import { organizations } from "../db/schemas/organizations.ts";
 import { taxRates } from "../db/schemas/tax-rates.ts";
 import { integrations } from "../db/schemas/integrations.ts";
 
 export const onboardingService = {
   async getState(orgId: string) {
-    const [org] = await db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1);
+    const [org] = await getDb().select().from(organizations).where(eq(organizations.id, orgId)).limit(1);
     if (!org)
       return {
         organization: null,
@@ -15,12 +15,12 @@ export const onboardingService = {
         steps: { company: false, branding: false, tax: false, integrations: false, preview: false },
       };
 
-    const [taxCount] = await db
+    const [taxCount] = await getDb()
       .select({ count: sql<number>`count(*)` })
       .from(taxRates)
       .where(eq(taxRates.organizationId, orgId));
 
-    const [integrationCount] = await db
+    const [integrationCount] = await getDb()
       .select({ count: sql<number>`count(*)` })
       .from(integrations)
       .where(eq(integrations.organizationId, orgId));
@@ -40,7 +40,7 @@ export const onboardingService = {
 
   async completeStep(orgId: string, step: string, data: Record<string, unknown>) {
     if (["company", "branding"].includes(step)) {
-      await db
+      await getDb()
         .update(organizations)
         .set({ ...(data as any), updatedAt: new Date() })
         .where(eq(organizations.id, orgId));
@@ -55,7 +55,7 @@ export const onboardingService = {
         country: String(r.country),
         isDefault: Boolean(r.isDefault),
       }));
-      if (values.length > 0) await db.insert(taxRates).values(values);
+      if (values.length > 0) await getDb().insert(taxRates).values(values);
     }
 
     return onboardingService.getState(orgId);
@@ -66,7 +66,7 @@ export const onboardingService = {
   },
 
   async complete(orgId: string) {
-    await db.update(organizations).set({ onboardingComplete: true, updatedAt: new Date() }).where(eq(organizations.id, orgId));
+    await getDb().update(organizations).set({ onboardingComplete: true, updatedAt: new Date() }).where(eq(organizations.id, orgId));
     return { success: true };
   },
 };

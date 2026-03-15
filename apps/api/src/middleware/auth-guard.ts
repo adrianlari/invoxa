@@ -1,6 +1,6 @@
 import type { NextFunction, Response } from "express";
 import { and, eq } from "drizzle-orm";
-import { db, setRlsContext } from "../db/client.ts";
+import { db, withRlsContext } from "../db/client.ts";
 import type { AppRequest } from "../types/request-context.ts";
 import { orgMembers } from "../db/schemas/organization-members.ts";
 import { sessions } from "../db/schemas/sessions.ts";
@@ -14,6 +14,7 @@ export async function authGuard(req: any, res: Response, next: NextFunction) {
     return res.status(401).json({ error: "Authentication required" });
   }
 
+  // Auth queries use the shared db (no RLS needed for sessions/users)
   const [sessionWithUser] = await db
     .select({ session: sessions, user: users })
     .from(sessions)
@@ -43,12 +44,13 @@ export async function authGuard(req: any, res: Response, next: NextFunction) {
   (request as any).user = sessionWithUser.user;
   (request as any).membership = membership;
 
-  // Set RLS context so Postgres enforces org isolation at DB level
-  try {
-    await setRlsContext(organizationId);
-  } catch {
-    // RLS context is a safety net; don't block requests if it fails
-  }
-
-  next();
+  // Wrap the rest of the request in an RLS-scoped connection.
+  // All downstream calls to getDb() will use this scoped connection.
+  withRlsContext(organizationId, () => {
+    return new Promise<void>((resolve, reject) => {
+      res.on("finish", resolve);
+      res.on("error", reject);
+      next();
+    });
+  }).catch(next);
 }

@@ -210,3 +210,61 @@ CREATE POLICY product_org_isolation ON "Product"
 --   CREATE ROLE invoxa_app LOGIN PASSWORD 'xxx';
 --   GRANT ALL ON ALL TABLES IN SCHEMA public TO invoxa_app;
 -- ============================================================
+
+-- Enable RLS on all org-scoped tables
+ALTER TABLE "Customer" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Customer" FORCE ROW LEVEL SECURITY;
+
+ALTER TABLE "Invoice" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Invoice" FORCE ROW LEVEL SECURITY;
+
+ALTER TABLE "InvoiceLineItem" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "InvoiceLineItem" FORCE ROW LEVEL SECURITY;
+
+ALTER TABLE "Integration" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Integration" FORCE ROW LEVEL SECURITY;
+
+ALTER TABLE "TaxRate" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "TaxRate" FORCE ROW LEVEL SECURITY;
+
+ALTER TABLE "Product" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Product" FORCE ROW LEVEL SECURITY;
+
+-- Policies for tables with organizationId column
+CREATE POLICY customer_org_isolation ON "Customer"
+  USING ("organizationId" = current_setting('app.current_org_id', true))
+  WITH CHECK ("organizationId" = current_setting('app.current_org_id', true));
+
+CREATE POLICY invoice_org_isolation ON "Invoice"
+  USING ("organizationId" = current_setting('app.current_org_id', true))
+  WITH CHECK ("organizationId" = current_setting('app.current_org_id', true));
+
+CREATE POLICY integration_org_isolation ON "Integration"
+  USING ("organizationId" = current_setting('app.current_org_id', true))
+  WITH CHECK ("organizationId" = current_setting('app.current_org_id', true));
+
+CREATE POLICY tax_rate_org_isolation ON "TaxRate"
+  USING ("organizationId" = current_setting('app.current_org_id', true))
+  WITH CHECK ("organizationId" = current_setting('app.current_org_id', true));
+
+CREATE POLICY product_org_isolation ON "Product"
+  USING ("organizationId" = current_setting('app.current_org_id', true))
+  WITH CHECK ("organizationId" = current_setting('app.current_org_id', true));
+
+-- InvoiceLineItem doesn't have organizationId directly — join through Invoice
+-- Policy: only allow line items whose parent invoice belongs to the current org
+CREATE POLICY line_item_org_isolation ON "InvoiceLineItem"
+  USING (
+    EXISTS (
+      SELECT 1 FROM "Invoice"
+      WHERE "Invoice"."id" = "InvoiceLineItem"."invoiceId"
+        AND "Invoice"."organizationId" = current_setting('app.current_org_id', true)
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM "Invoice"
+      WHERE "Invoice"."id" = "InvoiceLineItem"."invoiceId"
+        AND "Invoice"."organizationId" = current_setting('app.current_org_id', true)
+    )
+  );

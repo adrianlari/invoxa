@@ -1,16 +1,16 @@
 import { randomUUID } from "crypto";
 import { and, desc, eq } from "drizzle-orm";
-import { db } from "../db/client.ts";
+import { getDb } from "../db/client.ts";
 import { customers } from "../db/schemas/customers.ts";
 import { invoices } from "../db/schemas/invoices.ts";
 
 export const customersService = {
   async list(organizationId: string) {
-    return await db.select().from(customers).where(eq(customers.organizationId, organizationId)).orderBy(desc(customers.createdAt));
+    return await getDb().select().from(customers).where(eq(customers.organizationId, organizationId)).orderBy(desc(customers.createdAt));
   },
 
   async create(organizationId: string, data: Record<string, unknown>) {
-    const [customer] = await db
+    const [customer] = await getDb()
       .insert(customers)
       .values({
         id: randomUUID(),
@@ -29,7 +29,7 @@ export const customersService = {
   },
 
   async getById(organizationId: string, id: string) {
-    const [customer] = await db
+    const [customer] = await getDb()
       .select()
       .from(customers)
       .where(and(eq(customers.id, id), eq(customers.organizationId, organizationId)))
@@ -37,7 +37,7 @@ export const customersService = {
 
     if (!customer) return null;
 
-    const customerInvoices = await db
+    const customerInvoices = await getDb()
       .select()
       .from(invoices)
       .where(and(eq(invoices.customerId, id), eq(invoices.organizationId, organizationId)));
@@ -45,7 +45,7 @@ export const customersService = {
   },
 
   async update(organizationId: string, id: string, data: Record<string, unknown>) {
-    const [customer] = await db
+    const [customer] = await getDb()
       .update(customers)
       .set({ ...(data as any), updatedAt: new Date() })
       .where(and(eq(customers.id, id), eq(customers.organizationId, organizationId)))

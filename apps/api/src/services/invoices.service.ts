@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { Decimal } from "decimal.js";
 import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { createInvoiceSchema, type CreateInvoiceInput } from "@invoxa/shared";
-import { db } from "../db/client.ts";
+import { getDb } from "../db/client.ts";
 import { taxService } from "./tax.service.ts";
 import { pdfService } from "./pdf.service.ts";
 import { emailService } from "./email.service.ts";
@@ -14,9 +14,9 @@ async function hydrateInvoices(rows: any[]) {
   const customerIds = [...new Set(rows.map((invoice: any) => invoice.customerId))];
   const invoiceIds = rows.map((invoice: any) => invoice.id);
 
-  const customerRows = customerIds.length ? await db.select().from(customers).where(inArray(customers.id, customerIds)) : [];
+  const customerRows = customerIds.length ? await getDb().select().from(customers).where(inArray(customers.id, customerIds)) : [];
   const lineItemRows = invoiceIds.length
-    ? await db.select().from(invoiceLineItems).where(inArray(invoiceLineItems.invoiceId, invoiceIds))
+    ? await getDb().select().from(invoiceLineItems).where(inArray(invoiceLineItems.invoiceId, invoiceIds))
     : [];
 
   const customerMap = new Map(customerRows.map((row) => [row.id, row]));
@@ -49,7 +49,7 @@ export const invoicesService = {
   async createInvoice(orgId: string, dto: CreateInvoiceInput) {
     const payload = createInvoiceSchema.parse(dto);
 
-    return db.transaction(async (tx) => {
+    return getDb().transaction(async (tx) => {
       const invoiceNumber = await invoicesService.assignInvoiceNumber(orgId, tx);
       let subtotal = new Decimal(0);
       let taxTotal = new Decimal(0);
@@ -110,7 +110,7 @@ export const invoicesService = {
 
     const where = conditions.length === 1 ? conditions[0] : and(...conditions);
 
-    const dataRows = await db
+    const dataRows = await getDb()
       .select()
       .from(invoices)
       .where(where)
@@ -118,7 +118,7 @@ export const invoicesService = {
       .limit(limit)
       .offset((page - 1) * limit);
 
-    const [countRow] = await db
+    const [countRow] = await getDb()
       .select({ count: sql<number>`count(*)` })
       .from(invoices)
       .where(where);
@@ -130,20 +130,20 @@ export const invoicesService = {
   },
 
   async getById(orgId: string, id: string) {
-    const [invoice] = await db
+    const [invoice] = await getDb()
       .select()
       .from(invoices)
       .where(and(eq(invoices.id, id), eq(invoices.organizationId, orgId)))
       .limit(1);
 
     if (!invoice) return null;
-    const [customer] = await db.select().from(customers).where(eq(customers.id, invoice.customerId)).limit(1);
-    const lineItems = await db.select().from(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invoice.id));
+    const [customer] = await getDb().select().from(customers).where(eq(customers.id, invoice.customerId)).limit(1);
+    const lineItems = await getDb().select().from(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invoice.id));
     return { ...invoice, customer, lineItems };
   },
 
   async update(orgId: string, id: string, data: Record<string, unknown>) {
-    const [invoice] = await db
+    const [invoice] = await getDb()
       .update(invoices)
       .set({ ...(data as any), updatedAt: new Date() })
       .where(and(eq(invoices.id, id), eq(invoices.organizationId, orgId)))
@@ -153,7 +153,7 @@ export const invoicesService = {
   },
 
   async remove(orgId: string, id: string) {
-    const [deleted] = await db
+    const [deleted] = await getDb()
       .delete(invoices)
       .where(and(eq(invoices.id, id), eq(invoices.organizationId, orgId)))
       .returning();
@@ -162,37 +162,37 @@ export const invoicesService = {
   },
 
   async generatePdf(orgId: string, invoiceId: string) {
-    const [invoice] = await db
+    const [invoice] = await getDb()
       .select()
       .from(invoices)
       .where(and(eq(invoices.id, invoiceId), eq(invoices.organizationId, orgId)))
       .limit(1);
     if (!invoice) throw new Error("Invoice not found");
 
-    const [customer] = await db.select().from(customers).where(eq(customers.id, invoice.customerId)).limit(1);
-    const [organization] = await db.select().from(organizations).where(eq(organizations.id, invoice.organizationId)).limit(1);
-    const lineItems = await db.select().from(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invoice.id));
+    const [customer] = await getDb().select().from(customers).where(eq(customers.id, invoice.customerId)).limit(1);
+    const [organization] = await getDb().select().from(organizations).where(eq(organizations.id, invoice.organizationId)).limit(1);
+    const lineItems = await getDb().select().from(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invoice.id));
 
     const pdf = await pdfService.generateInvoicePdf({ ...invoice, customer, organization, lineItems });
     const pdfUrl = await pdfService.uploadPdf(pdf, invoiceId);
-    await db.update(invoices).set({ pdfUrl, updatedAt: new Date() }).where(eq(invoices.id, invoiceId));
+    await getDb().update(invoices).set({ pdfUrl, updatedAt: new Date() }).where(eq(invoices.id, invoiceId));
     return pdfUrl;
   },
 
   async sendInvoice(orgId: string, invoiceId: string) {
-    const [invoice] = await db
+    const [invoice] = await getDb()
       .select()
       .from(invoices)
       .where(and(eq(invoices.id, invoiceId), eq(invoices.organizationId, orgId)))
       .limit(1);
     if (!invoice) throw new Error("Invoice not found");
 
-    const [customer] = await db.select().from(customers).where(eq(customers.id, invoice.customerId)).limit(1);
+    const [customer] = await getDb().select().from(customers).where(eq(customers.id, invoice.customerId)).limit(1);
     if (!customer?.email) throw new Error("Customer email missing");
 
     const pdfUrl = invoice.pdfUrl ?? (await invoicesService.generatePdf(orgId, invoiceId));
     await emailService.sendInvoiceEmail({ to: customer.email, invoiceNumber: invoice.invoiceNumber, pdfUrl });
-    await db
+    await getDb()
       .update(invoices)
       .set({ status: "SENT", sentAt: new Date(), updatedAt: new Date() })
       .where(and(eq(invoices.id, invoiceId), eq(invoices.organizationId, orgId)));
@@ -200,7 +200,7 @@ export const invoicesService = {
   },
 
   async markPaid(orgId: string, invoiceId: string, paidAt?: Date) {
-    const [invoice] = await db
+    const [invoice] = await getDb()
       .update(invoices)
       .set({ status: "PAID", paidAt: paidAt ?? new Date(), updatedAt: new Date() })
       .where(and(eq(invoices.id, invoiceId), eq(invoices.organizationId, orgId)))
@@ -210,7 +210,7 @@ export const invoicesService = {
   },
 
   async markOverdueInvoices() {
-    await db
+    await getDb()
       .update(invoices)
       .set({ status: "OVERDUE", updatedAt: new Date() })
       .where(and(eq(invoices.status, "SENT"), lte(invoices.dueDate, new Date())));
