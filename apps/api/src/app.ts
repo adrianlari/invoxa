@@ -10,6 +10,7 @@ import { customersRoutes } from "./routes/customers.routes.ts";
 import { integrationsRoutes } from "./routes/integrations.routes.ts";
 import { integrationsPublicRoutes } from "./routes/integrations-public.routes.ts";
 import { exportsRoutes } from "./routes/exports.routes.ts";
+import { setupSwagger } from "./swagger.ts";
 
 export function createApp() {
   const app = express();
@@ -21,6 +22,9 @@ export function createApp() {
   });
   app.use(express.json({ limit: "5mb" }));
   app.use(contextMiddleware);
+
+  // Swagger docs (no auth required)
+  setupSwagger(app);
 
   // Public routes (no auth required)
   app.get("/health", (_req, res) => res.json({ ok: true }));
