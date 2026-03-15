@@ -1,0 +1,52 @@
+{
+  "name": "@invoxa/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "drizzle:generate": "drizzle-kit generate",
+    "drizzle:push": "drizzle-kit push",
+    "drizzle:migrate": "drizzle-kit migrate",
+    "test": "jest --config jest.config.cjs",
+    "test:unit": "jest --config jest.config.cjs --selectProjects unit",
+    "test:integration": "jest --config jest.config.cjs --selectProjects integration",
+    "test:e2e": "jest --config jest.config.cjs --selectProjects e2e",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo 'No lint configured'"
+  },
+  "dependencies": {
+    "@invoxa/shared": "workspace:*",
+    "@types/bcrypt": "^6.0.0",
+    "amazon-sp-api": "^1.2.0",
+    "axios": "^1.13.6",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "csv-parse": "^5.6.0",
+    "decimal.js": "^10.4.3",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.44.5",
+    "express": "^4.21.2",
+    "pg": "^8.16.3",
+    "puppeteer": "^24.0.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^9.3.0",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.15.5",
+    "@types/supertest": "^6.0.2",
+    "drizzle-kit": "^0.31.5",
+    "jest": "^29.7.0",
+    "msw": "^2.6.6",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@invoxa/shared": ["packages/shared/src/index.ts"],
+      "@invoxa/shared/*": ["packages/shared/src/*"]
+    },
+    "exclude": ["node_modules", "dist"]
+  }
+}
