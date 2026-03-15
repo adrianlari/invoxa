@@ -5,8 +5,8 @@ import { customers } from "../db/schemas/customers.ts";
 import { invoices } from "../db/schemas/invoices.ts";
 
 export const customersService = {
-  list(organizationId: string) {
-    return db.select().from(customers).where(eq(customers.organizationId, organizationId)).orderBy(desc(customers.createdAt));
+  async list(organizationId: string) {
+    return await db.select().from(customers).where(eq(customers.organizationId, organizationId)).orderBy(desc(customers.createdAt));
   },
 
   async create(organizationId: string, data: Record<string, unknown>) {

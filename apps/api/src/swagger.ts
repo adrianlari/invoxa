@@ -10,7 +10,7 @@ const spec = swaggerJsdoc({
       version: "0.1.0",
       description: "E-commerce invoicing SaaS API for Amazon Selling Partners",
     },
-    servers: [{ url: "http://localhost:4000", description: "Local dev" }],
+    servers: [{ url: "http://localhost:3001", description: "Local dev" }],
     components: {
       securitySchemes: {
         bearerAuth: {
@@ -230,7 +230,12 @@ const spec = swaggerJsdoc({
           summary: "Get current organization",
           security: [{ bearerAuth: [] }],
           parameters: [{ $ref: "#/components/parameters/orgId" }],
-          responses: { "200": { description: "Organization details", content: { "application/json": { schema: { $ref: "#/components/schemas/Organization" } } } } },
+          responses: {
+            "200": {
+              description: "Organization details",
+              content: { "application/json": { schema: { $ref: "#/components/schemas/Organization" } } },
+            },
+          },
         },
         put: {
           tags: ["Organizations"],
@@ -247,7 +252,10 @@ const spec = swaggerJsdoc({
           summary: "Upload organization logo",
           security: [{ bearerAuth: [] }],
           parameters: [{ $ref: "#/components/parameters/orgId" }],
-          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { logoUrl: { type: "string" } } } } } },
+          requestBody: {
+            required: true,
+            content: { "application/json": { schema: { type: "object", properties: { logoUrl: { type: "string" } } } } },
+          },
           responses: { "200": { description: "Logo updated" } },
         },
       },
@@ -259,7 +267,12 @@ const spec = swaggerJsdoc({
           summary: "List all customers",
           security: [{ bearerAuth: [] }],
           parameters: [{ $ref: "#/components/parameters/orgId" }],
-          responses: { "200": { description: "Array of customers", content: { "application/json": { schema: { type: "array", items: { $ref: "#/components/schemas/Customer" } } } } } },
+          responses: {
+            "200": {
+              description: "Array of customers",
+              content: { "application/json": { schema: { type: "array", items: { $ref: "#/components/schemas/Customer" } } } },
+            },
+          },
         },
         post: {
           tags: ["Customers"],
@@ -268,7 +281,21 @@ const spec = swaggerJsdoc({
           parameters: [{ $ref: "#/components/parameters/orgId" }],
           requestBody: {
             required: true,
-            content: { "application/json": { schema: { type: "object", required: ["name"], properties: { name: { type: "string" }, email: { type: "string" }, company: { type: "string" }, vatId: { type: "string" }, address: { type: "object" } } } } },
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["name"],
+                  properties: {
+                    name: { type: "string" },
+                    email: { type: "string" },
+                    company: { type: "string" },
+                    vatId: { type: "string" },
+                    address: { type: "object" },
+                  },
+                },
+              },
+            },
           },
           responses: { "200": { description: "Created customer" } },
         },
@@ -354,7 +381,12 @@ const spec = swaggerJsdoc({
           summary: "Get invoice by ID",
           security: [{ bearerAuth: [] }],
           parameters: [{ $ref: "#/components/parameters/orgId" }, { in: "path", name: "id", required: true, schema: { type: "string" } }],
-          responses: { "200": { description: "Invoice with customer and line items", content: { "application/json": { schema: { $ref: "#/components/schemas/Invoice" } } } } },
+          responses: {
+            "200": {
+              description: "Invoice with customer and line items",
+              content: { "application/json": { schema: { $ref: "#/components/schemas/Invoice" } } },
+            },
+          },
         },
         put: {
           tags: ["Invoices"],
@@ -378,7 +410,12 @@ const spec = swaggerJsdoc({
           summary: "Generate invoice PDF",
           security: [{ bearerAuth: [] }],
           parameters: [{ $ref: "#/components/parameters/orgId" }, { in: "path", name: "id", required: true, schema: { type: "string" } }],
-          responses: { "200": { description: "PDF URL", content: { "application/json": { schema: { type: "object", properties: { url: { type: "string" } } } } } } },
+          responses: {
+            "200": {
+              description: "PDF URL",
+              content: { "application/json": { schema: { type: "object", properties: { url: { type: "string" } } } } },
+            },
+          },
         },
       },
       "/invoices/{id}/send": {
@@ -396,7 +433,11 @@ const spec = swaggerJsdoc({
           summary: "Mark invoice as paid",
           security: [{ bearerAuth: [] }],
           parameters: [{ $ref: "#/components/parameters/orgId" }, { in: "path", name: "id", required: true, schema: { type: "string" } }],
-          requestBody: { content: { "application/json": { schema: { type: "object", properties: { paidAt: { type: "string", format: "date-time" } } } } } },
+          requestBody: {
+            content: {
+              "application/json": { schema: { type: "object", properties: { paidAt: { type: "string", format: "date-time" } } } },
+            },
+          },
           responses: { "200": { description: "Invoice marked as paid" } },
         },
       },
@@ -408,7 +449,12 @@ const spec = swaggerJsdoc({
           summary: "List active integrations",
           security: [{ bearerAuth: [] }],
           parameters: [{ $ref: "#/components/parameters/orgId" }],
-          responses: { "200": { description: "Array of integrations", content: { "application/json": { schema: { type: "array", items: { $ref: "#/components/schemas/Integration" } } } } } },
+          responses: {
+            "200": {
+              description: "Array of integrations",
+              content: { "application/json": { schema: { type: "array", items: { $ref: "#/components/schemas/Integration" } } } },
+            },
+          },
         },
       },
       "/integrations/amazon/connect": {
@@ -420,14 +466,27 @@ const spec = swaggerJsdoc({
             { $ref: "#/components/parameters/orgId" },
             { in: "query", name: "marketplace", schema: { type: "string", default: "DE" } },
           ],
-          responses: { "200": { description: "Auth URL and state", content: { "application/json": { schema: { type: "object", properties: { authUrl: { type: "string" }, state: { type: "string" } } } } } } },
+          responses: {
+            "200": {
+              description: "Auth URL and state",
+              content: {
+                "application/json": { schema: { type: "object", properties: { authUrl: { type: "string" }, state: { type: "string" } } } },
+              },
+            },
+          },
         },
         post: {
           tags: ["Integrations - Amazon"],
           summary: "Initiate Amazon OAuth connection",
           security: [{ bearerAuth: [] }],
           parameters: [{ $ref: "#/components/parameters/orgId" }],
-          requestBody: { content: { "application/json": { schema: { type: "object", properties: { marketplace: { type: "string" }, returnTo: { type: "string" } } } } } },
+          requestBody: {
+            content: {
+              "application/json": {
+                schema: { type: "object", properties: { marketplace: { type: "string" }, returnTo: { type: "string" } } },
+              },
+            },
+          },
           responses: { "200": { description: "Auth URL" } },
         },
       },
@@ -463,7 +522,14 @@ const spec = swaggerJsdoc({
           summary: "Continue Appstore login after user authenticates",
           security: [{ bearerAuth: [] }],
           parameters: [{ $ref: "#/components/parameters/orgId" }],
-          requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["appstoreLoginToken"], properties: { appstoreLoginToken: { type: "string" } } } } } },
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { type: "object", required: ["appstoreLoginToken"], properties: { appstoreLoginToken: { type: "string" } } },
+              },
+            },
+          },
           responses: { "200": { description: "Redirect URL to Amazon consent" } },
         },
       },
@@ -484,7 +550,10 @@ const spec = swaggerJsdoc({
           summary: "Claim an Appstore install token",
           security: [{ bearerAuth: [] }],
           parameters: [{ $ref: "#/components/parameters/orgId" }],
-          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { installToken: { type: "string" } } } } } },
+          requestBody: {
+            required: true,
+            content: { "application/json": { schema: { type: "object", properties: { installToken: { type: "string" } } } } },
+          },
           responses: { "200": { description: "Install claimed, sync started" } },
         },
       },
@@ -502,7 +571,18 @@ const spec = swaggerJsdoc({
           responses: {
             "200": {
               description: "Order previews",
-              content: { "application/json": { schema: { type: "object", properties: { source: { type: "string" }, count: { type: "integer" }, orders: { type: "array", items: { $ref: "#/components/schemas/AmazonOrderPreview" } } } } } },
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      source: { type: "string" },
+                      count: { type: "integer" },
+                      orders: { type: "array", items: { $ref: "#/components/schemas/AmazonOrderPreview" } },
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -512,7 +592,10 @@ const spec = swaggerJsdoc({
           tags: ["Integrations - Amazon"],
           summary: "Get Amazon order details",
           security: [{ bearerAuth: [] }],
-          parameters: [{ $ref: "#/components/parameters/orgId" }, { in: "path", name: "orderId", required: true, schema: { type: "string" } }],
+          parameters: [
+            { $ref: "#/components/parameters/orgId" },
+            { in: "path", name: "orderId", required: true, schema: { type: "string" } },
+          ],
           responses: { "200": { description: "Order detail" } },
         },
       },
@@ -521,7 +604,10 @@ const spec = swaggerJsdoc({
           tags: ["Integrations - Amazon"],
           summary: "Get Amazon order line items",
           security: [{ bearerAuth: [] }],
-          parameters: [{ $ref: "#/components/parameters/orgId" }, { in: "path", name: "orderId", required: true, schema: { type: "string" } }],
+          parameters: [
+            { $ref: "#/components/parameters/orgId" },
+            { in: "path", name: "orderId", required: true, schema: { type: "string" } },
+          ],
           responses: { "200": { description: "Order items" } },
         },
       },
@@ -530,8 +616,18 @@ const spec = swaggerJsdoc({
           tags: ["Integrations - Amazon"],
           summary: "Get sync job status",
           security: [{ bearerAuth: [] }],
-          parameters: [{ $ref: "#/components/parameters/orgId" }, { in: "path", name: "jobId", required: true, schema: { type: "string" } }],
-          responses: { "200": { description: "Sync progress", content: { "application/json": { schema: { type: "object", properties: { state: { type: "string" }, progress: { type: "object" } } } } } } },
+          parameters: [
+            { $ref: "#/components/parameters/orgId" },
+            { in: "path", name: "jobId", required: true, schema: { type: "string" } },
+          ],
+          responses: {
+            "200": {
+              description: "Sync progress",
+              content: {
+                "application/json": { schema: { type: "object", properties: { state: { type: "string" }, progress: { type: "object" } } } },
+              },
+            },
+          },
         },
       },
       "/integrations/{id}": {
@@ -567,7 +663,10 @@ const spec = swaggerJsdoc({
           summary: "Import Temu orders via CSV",
           security: [{ bearerAuth: [] }],
           parameters: [{ $ref: "#/components/parameters/orgId" }],
-          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { csv: { type: "string" } } } } } },
+          requestBody: {
+            required: true,
+            content: { "application/json": { schema: { type: "object", properties: { csv: { type: "string" } } } } },
+          },
           responses: { "200": { description: "Import result with preview" } },
         },
       },
@@ -589,7 +688,12 @@ const spec = swaggerJsdoc({
           security: [{ bearerAuth: [] }],
           parameters: [
             { $ref: "#/components/parameters/orgId" },
-            { in: "path", name: "step", required: true, schema: { type: "string", enum: ["company", "branding", "tax", "integration", "preview"] } },
+            {
+              in: "path",
+              name: "step",
+              required: true,
+              schema: { type: "string", enum: ["company", "branding", "tax", "integration", "preview"] },
+            },
           ],
           requestBody: { required: true, content: { "application/json": { schema: { type: "object" } } } },
           responses: { "200": { description: "Step completed" } },
@@ -601,7 +705,10 @@ const spec = swaggerJsdoc({
           summary: "Validate a VAT ID",
           security: [{ bearerAuth: [] }],
           parameters: [{ $ref: "#/components/parameters/orgId" }],
-          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { vatId: { type: "string" } } } } } },
+          requestBody: {
+            required: true,
+            content: { "application/json": { schema: { type: "object", properties: { vatId: { type: "string" } } } } },
+          },
           responses: { "200": { description: "Validation result" } },
         },
       },
@@ -626,7 +733,16 @@ const spec = swaggerJsdoc({
             { in: "query", name: "from", required: true, schema: { type: "string", format: "date" }, description: "Start date" },
             { in: "query", name: "to", required: true, schema: { type: "string", format: "date" }, description: "End date" },
           ],
-          responses: { "200": { description: "DATEV CSV content", content: { "application/json": { schema: { type: "object", properties: { filename: { type: "string" }, content: { type: "string" } } } } } } },
+          responses: {
+            "200": {
+              description: "DATEV CSV content",
+              content: {
+                "application/json": {
+                  schema: { type: "object", properties: { filename: { type: "string" }, content: { type: "string" } } },
+                },
+              },
+            },
+          },
         },
       },
       "/exports/invoices/zip": {
