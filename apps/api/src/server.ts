@@ -8,8 +8,9 @@ const app = createApp();
 const start = async () => {
   await pool.query("select 1");
 
-  app.listen(port, "127.0.0.1", () => {
-    console.log(`API listening on http://127.0.0.1:${port}`);
+  const host = process.env.HOST ?? "0.0.0.0";
+  app.listen(port, host, () => {
+    console.log(`API listening on http://${host}:${port}`);
   });
 };
 
